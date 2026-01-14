@@ -1,50 +1,6 @@
-﻿
-
-//using RigCore.Interfaces;
-//using RigCore.Models;
-//using RigInfrastructure.Repositories;
-//using System;
-
-//namespace RigConsole
-//{
-//    class Program
-//    {
-//        static void Main()
-//        {
-//            Console.WriteLine("FIXING CIRCULAR DEPENDENCY TEST");
-//            Console.WriteLine("================================\n");
-
-//            // Test 1: RigCore works?
-//            Console.WriteLine("[1] Testing RigCore...");
-//            var equipment = new Equipment
-//            {
-//                EquipmentId = 1,
-//                EquipmentName = "Drill"
-//            };
-//            Console.WriteLine($"   ✓ Created: {equipment.EquipmentName}\n");
-
-//            // Test 2: RigInfrastructure works? (WILL NOW WORK)
-//            Console.WriteLine("[2] Testing RigInfrastructure...");
-//            try
-//            {
-//                string connString = "Server=.;Database=Test;Trusted_Connection=True;";
-//                IRigDataAccess repo = new EquipmentRepository(connString);
-//                Console.WriteLine("   ✓ Repository created SUCCESSFULLY!\n");
-//                Console.WriteLine("   CIRCULAR DEPENDENCY IS FIXED!");
-//            }
-//            catch (Exception ex)
-//            {
-//                Console.WriteLine($"   ✗ Error: {ex.Message}");
-//            }
-
-//            Console.WriteLine("\nPress any key to exit...");
-//            Console.ReadKey();
-//        }
-//    }
-//}
-
-using RigCore.Interfaces;
+﻿using RigCore.Interfaces;
 using RigCore.Models;
+using RigInfrastructure.Repositories;
 using System;
 
 namespace RigConsole
@@ -53,24 +9,133 @@ namespace RigConsole
     {
         static void Main()
         {
-            Console.WriteLine("WORKING AROUND CIRCULAR DEPENDENCY\n");
+            Console.WriteLine("OIL RIG MANAGEMENT SYSTEM - MILESTONE 3");
+            Console.WriteLine("UPDATE, DELETE & TRANSACTION WORKFLOW\n");
 
-            // Create test equipment
-            var equipment = new Equipment
+            string connectionString = "Server=WILKTOPIA5678\\JCWMSSQLSERVER;Database=OilRigDB;Trusted_Connection=True;TrustServerCertificate=True;";
+
+            try
             {
-                EquipmentId = 1,
-                EquipmentName = "Test Drill",
-                EquipmentType = "Drill",
-                LocationZone = "Zone A"
-            };
-            Console.WriteLine($"✓ Created Equipment: {equipment.EquipmentName}\n");
+                IRigDataAccess repository = new EquipmentRepository(connectionString);
+                Console.WriteLine("Repository created successfully!\n");
 
-            Console.WriteLine("NOTE: Repository cannot be created due to circular dependency.");
-            Console.WriteLine("\nTO FIX: Remove RigConsole reference from RigInfrastructure project.");
-            Console.WriteLine("\nCheck RigInfrastructure.csproj - remove this line:");
-            Console.WriteLine(@"  <ProjectReference Include=""..\RigConsole\RigConsole.csproj"" />");
+                // Test Update
+                Console.WriteLine("=== TEST 1: UPDATE ===");
+                TestUpdate(repository);
 
+                // Test Delete
+                Console.WriteLine("\n=== TEST 2: DELETE ===");
+                TestDelete(repository);
+
+                // Test Transaction
+                Console.WriteLine("\n=== TEST 3: TRANSACTION ===");
+                TestTransaction(repository);
+
+                // Final verification
+                Console.WriteLine("\n=== FINAL DATA ===");
+                var all = repository.GetAll();
+                Console.WriteLine($"Total equipment: {all.Count}");
+                foreach (var item in all)
+                {
+                    Console.WriteLine($"  ID: {item.EquipmentId}, Name: {item.EquipmentName}, Zone: {item.LocationZone}");
+                }
+
+                Console.WriteLine("\n✅ MILESTONE 3 COMPLETE!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\n❌ Error: {ex.Message}");
+            }
+
+            Console.WriteLine("\nPress any key to exit...");
             Console.ReadKey();
+        }
+
+        static void TestUpdate(IRigDataAccess repo)
+        {
+            try
+            {
+                // Get first equipment
+                var equipment = repo.GetById(1);
+                if (equipment != null)
+                {
+                    string oldZone = equipment.LocationZone;
+                    equipment.LocationZone = "Updated Zone " + DateTime.Now.Second;
+
+                    repo.Update(equipment);
+                    Console.WriteLine($"Updated equipment {equipment.EquipmentId} from {oldZone} to {equipment.LocationZone}");
+                }
+                else
+                {
+                    Console.WriteLine("No equipment found to update");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Update failed: {ex.Message}");
+            }
+        }
+
+        static void TestDelete(IRigDataAccess repo)
+        {
+            try
+            {
+                // Create test item
+                var testItem = new Equipment
+                {
+                    EquipmentName = "Temp Item " + DateTime.Now.Ticks,
+                    EquipmentType = "Test",
+                    LocationZone = "Delete Zone"
+                };
+
+                repo.Add(testItem);
+                Console.WriteLine("Added test item for deletion");
+
+                // Find and delete it
+                var all = repo.GetAll();
+                var toDelete = all.Find(e => e.EquipmentName.Contains("Temp Item"));
+
+                if (toDelete != null)
+                {
+                    repo.Delete(toDelete.EquipmentId);
+                    Console.WriteLine($"Deleted test item ID: {toDelete.EquipmentId}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Delete failed: {ex.Message}");
+            }
+        }
+
+        static void TestTransaction(IRigDataAccess repo)
+        {
+            try
+            {
+                // Find equipment in Zone 1
+                var all = repo.GetAll();
+                var equipment = all.Find(e => e.LocationZone.Contains("Zone 1"));
+
+                if (equipment != null)
+                {
+                    bool success = repo.TransferEquipmentWithTransaction(
+                        equipment.EquipmentId,
+                        equipment.LocationZone,
+                        "Transaction Zone");
+
+                    if (success)
+                        Console.WriteLine($"Transaction successful: Moved equipment {equipment.EquipmentId}");
+                    else
+                        Console.WriteLine("Transaction rolled back (equipment not in expected zone)");
+                }
+                else
+                {
+                    Console.WriteLine("No equipment in Zone 1 for transaction test");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Transaction error: {ex.Message}");
+            }
         }
     }
 }

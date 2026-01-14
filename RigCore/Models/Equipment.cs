@@ -1,4 +1,5 @@
-﻿namespace RigCore.Models
+﻿#nullable enable
+namespace RigCore.Models
 {
     public class Equipment
     {
@@ -7,7 +8,6 @@
         public string EquipmentType { get; set; }
         public string LocationZone { get; set; }
 
-        // CONSTRUCTOR to fix CS8618
         public Equipment()
         {
             EquipmentName = string.Empty;

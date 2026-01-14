@@ -5,12 +5,12 @@
 	</PropertyGroup>
 
 	<!-- ONLY RigCore reference -->
-	<ItemGroup>
-		<ProjectReference Include="..\RigCore\RigCore.csproj" />
-	</ItemGroup>
 
 	<!-- NuGet package -->
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\RigCore\RigCore.csproj" />
 	</ItemGroup>
 </Project>
